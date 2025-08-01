@@ -26,13 +26,13 @@ export default function RootLayout() {
 			<Stack>
 				<Stack.Screen name="(screens)" options={{ headerShown: false }} />
 				<Stack.Screen name="+not-found" />
-				<Stack.Screen 
-					name="product" 
-					options={{ 
-						presentation: 'modal',
+				<Stack.Screen
+					name="product"
+					options={{
+						presentation: "modal",
 						headerShown: true,
-						headerTitle: 'Product Details'
-					}} 
+						headerTitle: "Product Details",
+					}}
 				/>
 			</Stack>
 			<StatusBar style="auto" />

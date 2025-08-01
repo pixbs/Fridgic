@@ -39,11 +39,11 @@ export default function Scan() {
 			facing="back"
 			barcodeScannerSettings={{
 				barcodeTypes: [
-					"ean13",    // European Article Number, standard in Europe
-					"ean8",     // Shorter EAN format for smaller packages
-					"upc_a",    // Universal Product Code, standard in US/Canada
-					"upc_e",    // Condensed UPC format for smaller packages
-					"code128",  // Used for logistics and additional product data
+					"ean13", // European Article Number, standard in Europe
+					"ean8", // Shorter EAN format for smaller packages
+					"upc_a", // Universal Product Code, standard in US/Canada
+					"upc_e", // Condensed UPC format for smaller packages
+					"code128", // Used for logistics and additional product data
 				],
 			}}
 			onBarcodeScanned={handleBarcodeScanned}

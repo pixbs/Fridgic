@@ -1,151 +1,158 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Text } from "@react-navigation/elements";
 import { useTheme } from "@react-navigation/native";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, Button, Image, ScrollView, View } from "react-native";
-import type { Product, SavedProduct } from "../constants/Types";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
+import type { SavedProduct } from "../constants/Types";
 
-export default function ProductModal() {
+export default function SavedProductModal() {
 	const { barcode } = useLocalSearchParams<{ barcode: string }>();
 	const theme = useTheme();
-	const [product, setProduct] = useState<Product | null>(null);
+	const [product, setProduct] = useState<SavedProduct | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [saving, setSaving] = useState(false);
+	const [removing, setRemoving] = useState(false);
 
-	useEffect(() => {
-		const fetchProduct = async (code: string) => {
-			try {
-				setLoading(true);
-				setError(null);
-				const response = await fetch(
-					`https://world.openfoodfacts.org/api/v0/product/${code}.json`,
-				);
-				const data: Product = await response.json();
-				setProduct(data);
-			} catch (err) {
-				setError(
-					err instanceof Error ? err.message : "Failed to fetch product",
-				);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		if (barcode) {
-			fetchProduct(barcode);
-		}
-	}, [barcode]);
-
-	const saveProduct = async () => {
-		if (!product || !product.product) return;
-
+	const loadSavedProduct = useCallback(async () => {
 		try {
-			setSaving(true);
-
-			// Create the product data with timestamp
-			const productToSave: SavedProduct = {
-				...product.product,
-				barcode: barcode,
-				savedAt: new Date().toISOString(),
-				savedDate: new Date().toLocaleDateString(),
-				savedTime: new Date().toLocaleTimeString(),
-			};
-
-			// Get existing saved products
+			setLoading(true);
 			const existingProducts = await AsyncStorage.getItem("savedProducts");
 			const savedProducts: SavedProduct[] = existingProducts
 				? JSON.parse(existingProducts)
 				: [];
 
-			// Check if product already exists (by barcode)
-			const existingIndex = savedProducts.findIndex(
-				(p: SavedProduct) => p.barcode === barcode,
-			);
-
-			if (existingIndex !== -1) {
-				// Update existing product
-				savedProducts[existingIndex] = productToSave;
-			} else {
-				// Add new product
-				savedProducts.push(productToSave);
-			}
-
-			// Save back to AsyncStorage
-			await AsyncStorage.setItem(
-				"savedProducts",
-				JSON.stringify(savedProducts),
-			);
-
-			console.log("Product saved to AsyncStorage:", productToSave);
-
-			// Navigate directly to the fridge screen
-			router.push("/(screens)");
+			const foundProduct = savedProducts.find((p) => p.barcode === barcode);
+			setProduct(foundProduct || null);
 		} catch (error) {
-			console.error("Error saving product:", error);
-			Alert.alert(
-				"Save Failed",
-				"Failed to save the product. Please try again.",
-				[{ text: "OK" }],
-			);
+			console.error("Error loading saved product:", error);
 		} finally {
-			setSaving(false);
+			setLoading(false);
 		}
+	}, [barcode]);
+
+	const removeProduct = async () => {
+		if (!product) return;
+
+		Alert.alert(
+			"Remove Product",
+			"Are you sure you want to remove this product from your fridge?",
+			[
+				{
+					text: "Cancel",
+					style: "cancel",
+				},
+				{
+					text: "Remove",
+					style: "destructive",
+					onPress: async () => {
+						try {
+							setRemoving(true);
+							const existingProducts =
+								await AsyncStorage.getItem("savedProducts");
+							const savedProducts: SavedProduct[] = existingProducts
+								? JSON.parse(existingProducts)
+								: [];
+
+							const updatedProducts = savedProducts.filter(
+								(p) => p.barcode !== barcode,
+							);
+
+							await AsyncStorage.setItem(
+								"savedProducts",
+								JSON.stringify(updatedProducts),
+							);
+
+							// Navigate back to fridge screen
+							router.back();
+						} catch (error) {
+							console.error("Error removing product:", error);
+							Alert.alert(
+								"Remove Failed",
+								"Failed to remove the product. Please try again.",
+								[{ text: "OK" }],
+							);
+						} finally {
+							setRemoving(false);
+						}
+					},
+				},
+			],
+		);
 	};
+
+	useEffect(() => {
+		loadSavedProduct();
+	}, [loadSavedProduct]);
 
 	if (loading) {
 		return (
-			<View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
+			<View
+				style={{
+					backgroundColor: theme.colors.background,
+					flex: 1,
+					justifyContent: "center",
+					alignItems: "center",
+				}}
+			>
 				<Stack.Screen
 					options={{
-						title: "Product Scanner",
+						title: "Product Details",
 						presentation: "modal",
 					}}
 				/>
-				<Text>Loading...</Text>
+				<Text>Loading product...</Text>
 			</View>
 		);
 	}
 
-	if (error) {
+	if (!product) {
 		return (
-			<View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
+			<View
+				style={{
+					backgroundColor: theme.colors.background,
+					flex: 1,
+					justifyContent: "center",
+					alignItems: "center",
+				}}
+			>
 				<Stack.Screen
 					options={{
-						title: "Product Scanner",
+						title: "Product Not Found",
 						presentation: "modal",
 					}}
 				/>
-				<Text>{`Error: ${error}`}</Text>
+				<Text>Product not found in your fridge.</Text>
 			</View>
 		);
 	}
-
-	if (!product || product.status === 0) {
-		return (
-			<View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
-				<Stack.Screen
-					options={{
-						title: "Product Scanner",
-						presentation: "modal",
-					}}
-				/>
-				<Text>{`Product not found for barcode: ${barcode}`}</Text>
-			</View>
-		);
-	}
-
-	const productData = product.product;
 
 	return (
 		<View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
 			<Stack.Screen
 				options={{
-					title: "Add Product",
+					title: "Product Details",
 					presentation: "modal",
+					headerRight: () => (
+						<Pressable
+							onPress={removeProduct}
+							disabled={removing}
+							style={{
+								paddingHorizontal: 16,
+								paddingVertical: 8,
+							}}
+						>
+							<Text
+								style={{
+									color: removing ? theme.colors.text + "80" : "#FF3B30",
+									fontWeight: "600",
+								}}
+							>
+								{removing ? "Removing..." : "Remove"}
+							</Text>
+						</Pressable>
+					),
 				}}
 			/>
+
 			<ScrollView style={{ padding: 16 }}>
 				<Text
 					style={{
@@ -155,13 +162,13 @@ export default function ProductModal() {
 						marginBottom: 16,
 					}}
 				>
-					Barcode: {barcode}
+					Barcode: {product.barcode}
 				</Text>
 
-				{productData?.image_url && (
+				{product.image_url && (
 					<View style={{ alignItems: "center", marginBottom: 20 }}>
 						<Image
-							source={{ uri: productData.image_url }}
+							source={{ uri: product.image_url }}
 							style={{
 								width: 200,
 								height: 200,
@@ -172,7 +179,7 @@ export default function ProductModal() {
 					</View>
 				)}
 
-				{productData?.product_name && (
+				{product.product_name && (
 					<View style={{ marginBottom: 16 }}>
 						<Text
 							style={{
@@ -182,12 +189,12 @@ export default function ProductModal() {
 								marginBottom: 4,
 							}}
 						>
-							{productData.product_name}
+							{product.product_name}
 						</Text>
 					</View>
 				)}
 
-				{productData?.brands && (
+				{product.brands && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -206,12 +213,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.brands}
+							{product.brands}
 						</Text>
 					</View>
 				)}
 
-				{productData?.quantity && (
+				{product.quantity && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -230,12 +237,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.quantity}
+							{product.quantity}
 						</Text>
 					</View>
 				)}
 
-				{productData?.categories && (
+				{product.categories && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -254,12 +261,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.categories}
+							{product.categories}
 						</Text>
 					</View>
 				)}
 
-				{productData?.packaging && (
+				{product.packaging && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -278,12 +285,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.packaging}
+							{product.packaging}
 						</Text>
 					</View>
 				)}
 
-				{productData?.stores && (
+				{product.stores && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -302,12 +309,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.stores}
+							{product.stores}
 						</Text>
 					</View>
 				)}
 
-				{productData?.countries && (
+				{product.countries && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -326,12 +333,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.countries}
+							{product.countries}
 						</Text>
 					</View>
 				)}
 
-				{productData?.nutriscore_grade && (
+				{product.nutriscore_grade && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -350,12 +357,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.nutriscore_grade.toUpperCase()}
+							{product.nutriscore_grade.toUpperCase()}
 						</Text>
 					</View>
 				)}
 
-				{productData?.labels && (
+				{product.labels && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -374,12 +381,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.labels}
+							{product.labels}
 						</Text>
 					</View>
 				)}
 
-				{productData?.allergens && (
+				{product.allergens && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -398,12 +405,12 @@ export default function ProductModal() {
 								opacity: 0.8,
 							}}
 						>
-							{productData.allergens}
+							{product.allergens}
 						</Text>
 					</View>
 				)}
 
-				{productData?.ingredients_text && (
+				{product.ingredients_text && (
 					<View style={{ marginBottom: 12 }}>
 						<Text
 							style={{
@@ -423,12 +430,12 @@ export default function ProductModal() {
 								lineHeight: 20,
 							}}
 						>
-							{productData.ingredients_text}
+							{product.ingredients_text}
 						</Text>
 					</View>
 				)}
 
-				{productData?.nutriments && (
+				{product.nutriments && (
 					<View style={{ marginBottom: 20 }}>
 						<Text
 							style={{
@@ -440,7 +447,7 @@ export default function ProductModal() {
 						>
 							Nutrition (per 100g)
 						</Text>
-						{productData.nutriments.energy_100g && (
+						{product.nutriments.energy_100g && (
 							<Text
 								style={{
 									fontSize: 14,
@@ -449,10 +456,10 @@ export default function ProductModal() {
 									marginBottom: 2,
 								}}
 							>
-								Energy: {productData.nutriments.energy_100g} kJ
+								Energy: {product.nutriments.energy_100g} kJ
 							</Text>
 						)}
-						{productData.nutriments.fat_100g && (
+						{product.nutriments.fat_100g && (
 							<Text
 								style={{
 									fontSize: 14,
@@ -461,10 +468,10 @@ export default function ProductModal() {
 									marginBottom: 2,
 								}}
 							>
-								Fat: {productData.nutriments.fat_100g}g
+								Fat: {product.nutriments.fat_100g}g
 							</Text>
 						)}
-						{productData.nutriments.carbohydrates_100g && (
+						{product.nutriments.carbohydrates_100g && (
 							<Text
 								style={{
 									fontSize: 14,
@@ -473,10 +480,10 @@ export default function ProductModal() {
 									marginBottom: 2,
 								}}
 							>
-								Carbohydrates: {productData.nutriments.carbohydrates_100g}g
+								Carbohydrates: {product.nutriments.carbohydrates_100g}g
 							</Text>
 						)}
-						{productData.nutriments.sugars_100g && (
+						{product.nutriments.sugars_100g && (
 							<Text
 								style={{
 									fontSize: 14,
@@ -485,10 +492,10 @@ export default function ProductModal() {
 									marginBottom: 2,
 								}}
 							>
-								Sugars: {productData.nutriments.sugars_100g}g
+								Sugars: {product.nutriments.sugars_100g}g
 							</Text>
 						)}
-						{productData.nutriments.proteins_100g && (
+						{product.nutriments.proteins_100g && (
 							<Text
 								style={{
 									fontSize: 14,
@@ -497,10 +504,10 @@ export default function ProductModal() {
 									marginBottom: 2,
 								}}
 							>
-								Proteins: {productData.nutriments.proteins_100g}g
+								Proteins: {product.nutriments.proteins_100g}g
 							</Text>
 						)}
-						{productData.nutriments.salt_100g && (
+						{product.nutriments.salt_100g && (
 							<Text
 								style={{
 									fontSize: 14,
@@ -509,18 +516,23 @@ export default function ProductModal() {
 									marginBottom: 2,
 								}}
 							>
-								Salt: {productData.nutriments.salt_100g}g
+								Salt: {product.nutriments.salt_100g}g
 							</Text>
 						)}
 					</View>
 				)}
 
-				<View style={{ marginTop: 20, marginBottom: 20 }}>
-					<Button
-						title={saving ? "Saving..." : "Add to Fridge"}
-						onPress={saveProduct}
-						disabled={saving}
-					/>
+				<View style={{ marginBottom: 20 }}>
+					<Text
+						style={{
+							fontSize: 12,
+							color: theme.colors.text,
+							opacity: 0.5,
+							textAlign: "center",
+						}}
+					>
+						Saved on {product.savedDate} at {product.savedTime}
+					</Text>
 				</View>
 			</ScrollView>
 		</View>

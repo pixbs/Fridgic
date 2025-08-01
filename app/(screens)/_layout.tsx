@@ -27,7 +27,7 @@ export default function PageLayout() {
 					),
 				}}
 			/>
-			<Tabs.Screen
+			{/* <Tabs.Screen
 				name="settings"
 				options={{
 					title: "Profile",
@@ -35,7 +35,7 @@ export default function PageLayout() {
 						<TabBarIcon name="account" color={color} />
 					),
 				}}
-			/>
+			/> */}
 		</Tabs>
 	);
 }
