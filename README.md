@@ -1,50 +1,106 @@
-# Welcome to your Expo app 👋
+# Fridgic 🥘
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Fridgic is a React Native mobile application built with Expo that helps users scan food product barcodes and manage their food inventory. The app leverages the Open Food Facts API to provide detailed product information and allows users to save products for future reference.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Barcode Scanning**: Use your device's camera to scan product barcodes
+- **Product Information**: Get detailed product information including:
+  - Nutritional information and Nutri-Score grades
+  - Ingredients and allergen information
+  - Brand, categories, and packaging details
+  - Product images
+- **Save Products**: Save scanned products to your personal collection
+- **Product Management**: View and manage your saved products
+- **Cross-Platform**: Runs on iOS, Android, and web
 
+## Technology Stack
+
+- **Framework**: React Native with Expo
+- **Routing**: Expo Router with file-based routing
+- **Camera**: Expo Camera for barcode scanning
+- **Storage**: AsyncStorage for local data persistence
+- **API**: Open Food Facts API for product data
+- **UI**: React Navigation with themed components
+- **Language**: TypeScript
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v16 or later)
+- Bun (recommended) or npm
+- Expo CLI
+- iOS Simulator (for iOS development) or Android Emulator (for Android development)
+
+### Installation
+
+1. Clone the repository:
    ```bash
+   git clone https://github.com/pixbs/Fridgic.git
+   cd Fridgic
+   ```
+
+2. Install dependencies:
+   ```bash
+   bun install
+   # or
    npm install
    ```
 
-2. Start the app
-
+3. Start the development server:
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. Run on your preferred platform:
+   - Press `i` for iOS simulator
+   - Press `a` for Android emulator
+   - Press `w` for web browser
+   - Scan the QR code with Expo Go app on your device
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Project Structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+app/
+├── (tabs)/          # Tab-based navigation screens
+│   ├── index.tsx    # Home screen
+│   └── explore.tsx  # Explore screen
+├── (screens)/       # Additional screens
+│   ├── index.tsx    # Screen index
+│   └── scan.tsx     # Barcode scanning screen
+├── product.tsx      # Product details modal
+├── saved-product.tsx # Saved product details modal
+└── _layout.tsx      # Root layout
+components/          # Reusable UI components
+constants/           # Type definitions and constants
+assets/             # Images, fonts, and other assets
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Available Scripts
 
-## Learn more
+- `bun start` / `npm start` - Start the Expo development server
+- `bun run android` - Start the app on Android
+- `bun run ios` - Start the app on iOS
+- `bun run web` - Start the app on web
+- `bun run lint` - Run Biome linter with auto-fix
 
-To learn more about developing your project with Expo, look at the following resources:
+## API Integration
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Fridgic uses the [Open Food Facts API](https://world.openfoodfacts.org/data) to fetch product information. The API provides comprehensive data about food products worldwide, including nutritional information, ingredients, and images.
 
-## Join the community
+## Contributing
 
-Join our community of developers creating universal apps.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Contact
+
+Project Link: [https://github.com/pixbs/Fridgic](https://github.com/pixbs/Fridgic)
