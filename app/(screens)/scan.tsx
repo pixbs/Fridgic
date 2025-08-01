@@ -1,4 +1,3 @@
-import { Text } from "@react-navigation/elements";
 import { useIsFocused } from "@react-navigation/native";
 import {
 	type BarcodeScanningResult,
@@ -6,7 +5,7 @@ import {
 	useCameraPermissions,
 } from "expo-camera";
 import { router } from "expo-router";
-import { Button, View } from "react-native";
+import { Alert, View } from "react-native";
 
 export default function Scan() {
 	const [permissions, requestPermission] = useCameraPermissions();
@@ -20,12 +19,17 @@ export default function Scan() {
 	};
 
 	if (!permissions?.granted) {
-		return (
-			<View>
-				<Text>We need your permission to show the camera.</Text>
-				<Button onPress={requestPermission} title="grant permission" />
-			</View>
+		Alert.alert(
+			"Camera Permission Required",
+			"We need your permission to show the camera.",
+			[
+				{
+					text: "Grant Permission",
+					onPress: requestPermission,
+				},
+			]
 		);
+		return null;
 	}
 
 	// Only render camera when screen is focused
